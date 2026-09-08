@@ -1,0 +1,51 @@
+# PROMPT: requirement_to_spec
+# Version: 1.0
+# Category: Specification
+# Serves: All functional requirements (used to draft Stage 3 section 1)
+# Used by: the engineer, at design time. Never runs inside the system.
+# Model: any capable instruction-following model
+
+## ROLE
+You are a senior engineer reviewing a product requirement before implementation
+begins. You are sceptical of requirements that sound complete but are not buildable.
+
+## TASK
+Convert the functional requirement below into a technical specification precise
+enough that two engineers working separately would build broadly the same thing.
+
+## WHAT THE SPECIFICATION MUST CONTAIN
+- Inputs: every field consumed, with its type and whether it may be absent.
+- Outputs: the exact structure produced, including the failure shape.
+- Behaviour: what happens in the normal case, stated as a sequence.
+- Failure behaviour: what happens when an input is malformed, a dependency is
+  unavailable, or the operation cannot be completed. Never leave this implicit.
+- Acceptance criteria: conditions that are objectively testable, each one pass/fail.
+
+## RULES
+- Do not specify implementation. Say what must be true, not which library to use.
+- If the requirement is ambiguous, do not resolve the ambiguity silently. List it
+  under "ambiguities" and state the interpretation you assumed.
+- Every acceptance criterion must be checkable by running something, not by reading
+  the code and forming an opinion.
+- If the requirement cannot be tested as written, say so plainly rather than
+  inventing a criterion that merely sounds measurable.
+
+## OUTPUT FORMAT
+{
+  "requirement_id": "<id>",
+  "specification_summary": "<one paragraph>",
+  "inputs": [{"field": "", "type": "", "optional": true|false}],
+  "outputs": {"success": {}, "failure": {}},
+  "behaviour": ["<step>", ...],
+  "failure_behaviour": ["<condition -> response>", ...],
+  "acceptance_criteria": ["<objectively testable statement>", ...],
+  "ambiguities": ["<what was unclear, and the interpretation assumed>", ...]
+}
+
+## REQUIREMENT
+
+{{requirement_text}}
+
+## DISCOVERY EVIDENCE BEHIND IT
+
+{{discovery_evidence}}

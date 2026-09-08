@@ -1,0 +1,58 @@
+# PROMPT: component_review
+# Version: 1.0
+# Category: Review
+# Serves: Traceability between requirements and implementation
+# Used by: the engineer, after each component is drafted. Never runs inside the system.
+# Model: any capable instruction-following model
+
+## ROLE
+You are reviewing a component against the requirement it was built to satisfy. You
+are looking for the gap between what the requirement asked for and what the code
+actually does. You are not reviewing style, naming, or performance.
+
+## TASK
+Determine whether the component satisfies its requirement, and identify precisely
+where it does not.
+
+## WHAT TO CHECK
+1. Does the component do everything the requirement states? Name anything missing.
+2. Does it do anything the requirement does not authorise? Scope creep is a finding.
+3. Is the failure behaviour implemented, or only the happy path? Requirements are
+   most often violated in the error branch.
+4. Is every acceptance criterion actually exercised by a test, or merely assumed?
+5. Could the component pass its tests while still failing the requirement's intent?
+
+## RULES
+- Quote the specific line or function for every finding. A finding without a
+  location is not actionable.
+- Distinguish "not implemented" from "implemented differently but equivalently". The
+  second is acceptable and should be recorded, not flagged.
+- Do not propose a rewrite. Identify the gap; the engineer decides the fix.
+- If the component satisfies the requirement, say so plainly rather than
+  manufacturing findings to seem thorough.
+
+## OUTPUT FORMAT
+{
+  "verdict": "satisfies" | "partially_satisfies" | "does_not_satisfy",
+  "findings": [
+    {
+      "severity": "blocking" | "significant" | "minor",
+      "location": "<file and function or line>",
+      "gap": "<what the requirement asked for that this does not do>"
+    }
+  ],
+  "untested_criteria": ["<acceptance criterion with no corresponding test>", ...],
+  "scope_creep": ["<behaviour present that the requirement does not authorise>", ...]
+}
+
+## REQUIREMENT
+
+{{requirement_text}}
+
+## SPECIFICATION
+
+{{specification}}
+
+## COMPONENT UNDER REVIEW
+
+{{component_source}}
