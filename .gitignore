@@ -8,3 +8,7 @@ evaluation/results/*.json
 .pytest_cache/
 *.egg-info/
 .DS_Store
+
+# Word/Office lock and temp files
+~$*
+*.tmp
