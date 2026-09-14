@@ -25,6 +25,7 @@ from src.config import settings
 from src.generate import Generation, generate
 from src.guardrails import GuardrailResult, validate
 from src.ingest import NormalisedTicket, normalise_ticket
+from src import kill_switch
 from src.logging_store import DecisionLog
 from src.model_client import ModelClient, default_client
 from src.retrieve import Retriever
@@ -183,6 +184,35 @@ class Pipeline:
             sources_used=",".join(r.doc_id for r in retrieved),
             requirement_ids="FR-03",
         )
+
+        # --- kill switch ----------------------------------------------
+        # Checked per ticket, before routing, so engaging it stops a run
+        # that is already in progress rather than only the next one. The
+        # run continues -- every ticket still gets an outcome -- but no
+        # automated reply can be produced while it is engaged.
+        switch = kill_switch.check()
+        if switch.engaged:
+            self._record(
+                ticket.ticket_id, "kill_switch", "escalate", switch.reason,
+                requirement_ids="GOVERNANCE",
+            )
+            return TicketOutcome(
+                ticket_id=ticket.ticket_id,
+                channel=ticket.channel,
+                customer_tier=ticket.customer_tier,
+                customer_region=ticket.customer_region,
+                language_fluency=ticket.language_fluency,
+                action="escalate",
+                intent=classification.intent,
+                urgency=classification.urgency,
+                confidence=classification.confidence,
+                routing_gate="kill_switch_engaged",
+                routing_reason=switch.reason,
+                citations=[r.doc_id for r in retrieved][:3],
+                warnings=list(ticket.warnings),
+                degraded=classification.degraded,
+                latency_seconds=time.monotonic() - started,
+            )
 
         # --- route ----------------------------------------------------
         decision = route(ticket, classification, retrieved, threshold=self.threshold)
