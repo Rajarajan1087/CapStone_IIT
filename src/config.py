@@ -92,7 +92,13 @@ class Settings:
     """Immutable snapshot of configuration, resolved once at import time."""
 
     # --- Model access -------------------------------------------------
+    # Two providers are supported. The pipeline is deliberately not
+    # coupled to either: the client exposes one contract and the provider
+    # is a configuration value, so a provider outage or a change of free
+    # tier is a one-line change rather than a rewrite.
+    model_provider: str            # "openrouter" or "mistral"
     openrouter_api_key: str
+    mistral_api_key: str
     model_name: str
     embedding_model: str
 
@@ -115,6 +121,12 @@ class Settings:
     request_timeout_seconds: float
     max_retries: int
     retry_backoff_seconds: float
+    # Minimum gap between live model calls, in seconds. Free tiers publish
+    # a sustained rate rather than a burst allowance, so pacing under that
+    # rate avoids the 429 entirely instead of paying retries to discover
+    # it. 1.1s sits just under Mistral's published 1 request per second.
+    # Set to 0 to disable pacing.
+    min_request_interval_seconds: float
     # When true, model responses are cached on disk by prompt hash. This
     # saves free-tier allowance, makes runs reproducible, and means a
     # re-run after a crash does not pay for work already done.
@@ -124,15 +136,23 @@ class Settings:
     log_level: str
 
     @property
+    def active_api_key(self) -> str:
+        """The key belonging to the configured provider."""
+        if self.model_provider == "mistral":
+            return self.mistral_api_key
+        return self.openrouter_api_key
+
+    @property
     def has_model_access(self) -> bool:
         """
-        True when a usable-looking key is configured.
+        True when a usable-looking key is configured for the active provider.
 
         The pipeline consults this to choose between the live model path
         and the degraded rule-only path, so that the absence of a key is a
         documented operating mode rather than a crash.
         """
-        return bool(self.openrouter_api_key) and self.openrouter_api_key != "your_key_here"
+        key = self.active_api_key
+        return bool(key) and key not in ("your_key_here", "your_mistral_key_here")
 
 
 def _resolve_path(raw: str) -> Path:
@@ -151,18 +171,33 @@ def _resolve_path(raw: str) -> Path:
     return path.resolve()
 
 
+_provider = _get_str("MODEL_PROVIDER", "openrouter").lower()
+if _provider not in ("openrouter", "mistral"):
+    raise ValueError(
+        f"MODEL_PROVIDER must be 'openrouter' or 'mistral', got {_provider!r}. "
+        f"Check your .env file."
+    )
+
+# Each provider names its models differently, so the default follows the
+# provider rather than forcing the user to set both values together.
+_default_model = ("mistral-small-latest" if _provider == "mistral"
+                  else "meta-llama/llama-3.1-8b-instruct")
+
 settings = Settings(
+    model_provider=_provider,
     openrouter_api_key=_get_str("OPENROUTER_API_KEY", ""),
-    model_name=_get_str("MODEL_NAME", "meta-llama/llama-3.1-8b-instruct"),
+    mistral_api_key=_get_str("MISTRAL_API_KEY", ""),
+    model_name=_get_str("MODEL_NAME", _default_model),
     embedding_model=_get_str("EMBEDDING_MODEL", "all-MiniLM-L6-v2"),
     chroma_path=_resolve_path(_get_str("CHROMA_PATH", "./storage/chroma")),
     database_url=_get_str("DATABASE_URL", "sqlite:///./storage/decisions.db"),
-    confidence_threshold=_get_float("CONFIDENCE_THRESHOLD", 0.80),
+    confidence_threshold=_get_float("CONFIDENCE_THRESHOLD", 0.45),
     retrieval_score_threshold=_get_float("RETRIEVAL_SCORE_THRESHOLD", 0.35),
     retrieval_top_k=_get_int("RETRIEVAL_TOP_K", 5),
     request_timeout_seconds=_get_float("REQUEST_TIMEOUT_SECONDS", 30.0),
     max_retries=_get_int("MAX_RETRIES", 4),
     retry_backoff_seconds=_get_float("RETRY_BACKOFF_SECONDS", 2.0),
+    min_request_interval_seconds=_get_float("MIN_REQUEST_INTERVAL_SECONDS", 1.1),
     cache_enabled=_get_str("CACHE_ENABLED", "true").lower() in ("1", "true", "yes"),
     cache_path=_resolve_path(_get_str("CACHE_PATH", "./storage/model_cache")),
     log_level=_get_str("LOG_LEVEL", "INFO").upper(),

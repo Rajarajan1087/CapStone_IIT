@@ -43,6 +43,18 @@ from src.config import settings
 logger = logging.getLogger(__name__)
 
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
+MISTRAL_URL = "https://api.mistral.ai/v1/chat/completions"
+
+# Both providers speak the OpenAI chat-completions shape, which is why a
+# single client can serve both: the request body and the response envelope
+# are identical, and only the endpoint and the auth header differ. Keeping
+# them behind one contract means the pipeline is not coupled to either, so
+# a provider outage or an exhausted free tier is a configuration change
+# rather than a rewrite.
+PROVIDER_URLS = {
+    "openrouter": OPENROUTER_URL,
+    "mistral": MISTRAL_URL,
+}
 
 # HTTP statuses worth trying again. 429 is rate limiting; 5xx are provider
 # side. Everything else (401 bad key, 400 bad request) will fail again
@@ -98,8 +110,11 @@ class ModelClient:
         model: str | None = None,
         cache_enabled: bool | None = None,
         cache_path: Path | None = None,
+        provider: str | None = None,
     ) -> None:
-        self.api_key = api_key if api_key is not None else settings.openrouter_api_key
+        self.provider = (provider or settings.model_provider).lower()
+        self.api_key = (api_key if api_key is not None
+                        else settings.active_api_key)
         self.model = model or settings.model_name
         self.cache_enabled = (
             settings.cache_enabled if cache_enabled is None else cache_enabled
@@ -115,25 +130,97 @@ class ModelClient:
         self.calls_failed = 0
         self.retries_performed = 0
 
+        # --- circuit breaker ------------------------------------------
+        # Measured the hard way: with the provider unreachable, every
+        # ticket independently burned its full retry budget (4 attempts
+        # with exponential backoff, roughly 15 seconds each). Over 580
+        # tickets that is more than two hours of waiting to produce the
+        # same degraded result the first ticket already established.
+        #
+        # After this many consecutive failures the client stops calling
+        # out and returns degraded immediately. The run finishes in
+        # minutes instead of hours, which is the difference between
+        # clearing A9 during an outage and failing it.
+        self.consecutive_failures = 0
+        self.circuit_open = False
+        self.circuit_trip_threshold = 3
+
+        # --- request pacing -------------------------------------------
+        # Free tiers publish a sustained rate, not a burst allowance.
+        # Mistral's free tier is one request per second; firing as fast as
+        # the code can loop produces a 429 on the very first call, which
+        # then costs the full retry budget to discover.
+        #
+        # Pacing is cheaper than retrying: a deliberate gap before each
+        # call keeps the run under the published limit, so the retry path
+        # is reserved for genuine problems rather than for self-inflicted
+        # ones. The pack is explicit that handling rate limits is part of
+        # the engineering rather than an obstacle to it.
+        #
+        # The interval adapts upward when a 429 still arrives, so a
+        # provider stricter than advertised slows the run rather than
+        # failing it.
+        self.min_interval_seconds = settings.min_request_interval_seconds
+        self._last_call_finished_at = 0.0
+        self.paced_wait_total_seconds = 0.0
+
     # -- availability --------------------------------------------------
+
+    @property
+    def has_key(self) -> bool:
+        """Whether a real key -- not a placeholder -- is configured."""
+        return bool(self.api_key) and self.api_key not in (
+            "your_key_here", "your_mistral_key_here")
+
+    @property
+    def has_http_library(self) -> bool:
+        """Whether an HTTP client is importable."""
+        try:
+            import requests  # noqa: F401
+        except ImportError:
+            return False
+        return True
+
+    @property
+    def unavailable_reason(self) -> str:
+        """
+        Why a live call cannot be made, or an empty string if it can.
+
+        Reported separately from `available` because the two causes need
+        different fixes and are easily confused. A message saying "no API
+        key" when the real problem is a missing library sends whoever is
+        reading it to the wrong place -- which is exactly what happened
+        during setup on a machine where the key was configured correctly
+        but `requests` was not installed.
+        """
+        if not self.has_key:
+            return f"no API key is configured for {self.provider}"
+        if not self.has_http_library:
+            return ("the 'requests' library is not installed "
+                    "(pip install requests)")
+        return ""
 
     @property
     def available(self) -> bool:
         """
         Whether a live call is even worth attempting.
 
-        False when no usable key is configured, or when `requests` is not
-        installed. Checked before each call so that a run without a key
-        degrades immediately rather than burning the retry budget on
-        calls that cannot succeed.
+        False when no usable key is configured, or when no HTTP client is
+        installed. Checked before each call so that a run without model
+        access degrades immediately rather than burning the retry budget
+        on calls that cannot succeed.
         """
-        if not self.api_key or self.api_key == "your_key_here":
-            return False
-        try:
-            import requests  # noqa: F401
-        except ImportError:
-            return False
-        return True
+        return not self.unavailable_reason
+
+    @property
+    def endpoint(self) -> str:
+        """
+        The chat-completions URL for the configured provider.
+
+        Read at call time rather than stored, so a test can redirect
+        PROVIDER_URLS to simulate an unreachable provider.
+        """
+        return PROVIDER_URLS.get(self.provider, OPENROUTER_URL)
 
     # -- caching -------------------------------------------------------
 
@@ -148,6 +235,7 @@ class ModelClient:
         """
         payload = json.dumps(
             {
+                "provider": self.provider,
                 "model": self.model,
                 "prompt": prompt,
                 "temperature": temperature,
@@ -215,18 +303,28 @@ class ModelClient:
                 latency_seconds=time.monotonic() - started,
             )
 
+        if self.circuit_open:
+            # Provider established as unreachable; do not pay for another
+            # round of timeouts to learn the same thing again.
+            self.calls_failed += 1
+            return ModelResponse(
+                ok=False,
+                reason=("Model not consulted because the provider was "
+                        "unreachable earlier in this run; the system is "
+                        "running in degraded mode."),
+                latency_seconds=time.monotonic() - started,
+            )
+
         if not self.available:
             self.calls_failed += 1
-            reason = (
-                "no API key configured"
-                if not self.api_key or self.api_key == "your_key_here"
-                else "the requests library is not installed"
-            )
+            reason = self.unavailable_reason
             return ModelResponse(
                 ok=False,
                 reason=f"Model not consulted because {reason}.",
                 latency_seconds=time.monotonic() - started,
             )
+
+        self._wait_for_rate_limit()
 
         import requests  # imported lazily so the module loads without it
 
@@ -239,7 +337,7 @@ class ModelClient:
         for attempt in range(1, settings.max_retries + 1):
             try:
                 response = requests.post(
-                    OPENROUTER_URL,
+                    self.endpoint,
                     headers={
                         "Authorization": f"Bearer {self.api_key}",
                         "Content-Type": "application/json",
@@ -253,6 +351,7 @@ class ModelClient:
                     timeout=settings.request_timeout_seconds,
                 )
             except Exception as exc:  # noqa: BLE001
+                self._last_call_finished_at = time.monotonic()
                 # Covers timeouts, DNS failure, refused connections and the
                 # provider being entirely unreachable -- the A11 scenario.
                 last_reason = f"could not reach the model provider ({type(exc).__name__})"
@@ -262,6 +361,8 @@ class ModelClient:
                     continue
                 break
 
+            self._last_call_finished_at = time.monotonic()
+
             if response.status_code == 200:
                 try:
                     text = response.json()["choices"][0]["message"]["content"]
@@ -270,12 +371,16 @@ class ModelClient:
                     break
                 text = (text or "").strip()
                 self._cache_write(cache_key, text)
+                self.consecutive_failures = 0
                 return ModelResponse(
                     ok=True,
                     text=text,
                     attempts=attempt,
                     latency_seconds=time.monotonic() - started,
                 )
+
+            if response.status_code == 429:
+                self._widen_pacing()
 
             if response.status_code in RETRYABLE_STATUSES:
                 last_reason = (
@@ -297,12 +402,51 @@ class ModelClient:
             break
 
         self.calls_failed += 1
+        self.consecutive_failures += 1
+        if self.consecutive_failures >= self.circuit_trip_threshold:
+            self.circuit_open = True
+            logger.warning(
+                "model provider unreachable after %d consecutive failures; "
+                "switching to degraded mode for the rest of this run",
+                self.consecutive_failures)
         return ModelResponse(
             ok=False,
             reason=f"Model not consulted because {last_reason}.",
             attempts=attempt,
             latency_seconds=time.monotonic() - started,
         )
+
+    def _wait_for_rate_limit(self) -> None:
+        """
+        Sleep just long enough to stay under the provider's sustained rate.
+
+        Measured from the END of the previous call rather than its start,
+        because the provider's clock only begins once it has answered.
+        Cache hits never reach here, so a re-run pays no pacing cost at all.
+        """
+        if self.min_interval_seconds <= 0:
+            return
+        elapsed = time.monotonic() - self._last_call_finished_at
+        remaining = self.min_interval_seconds - elapsed
+        if remaining > 0:
+            self.paced_wait_total_seconds += remaining
+            time.sleep(remaining)
+
+    def _widen_pacing(self) -> None:
+        """
+        Slow down after a rate limit, up to a ceiling.
+
+        A 429 despite pacing means the real limit is stricter than
+        configured. Widening the interval makes the run take longer
+        instead of failing, which is the correct trade for an unattended
+        evaluation.
+        """
+        if self.min_interval_seconds <= 0:
+            self.min_interval_seconds = 1.0
+        else:
+            self.min_interval_seconds = min(self.min_interval_seconds * 1.5, 10.0)
+        logger.info("rate limited; pacing widened to %.2fs between calls",
+                    self.min_interval_seconds)
 
     def _sleep_before_retry(self, attempt: int, response: Any = None) -> None:
         """
@@ -345,6 +489,10 @@ class ModelClient:
             "calls_served_from_cache": self.calls_served_from_cache,
             "calls_failed": self.calls_failed,
             "retries_performed": self.retries_performed,
+            "circuit_open": self.circuit_open,
+            "provider": self.provider,
+            "pacing_interval_seconds": round(self.min_interval_seconds, 2),
+            "paced_wait_total_seconds": round(self.paced_wait_total_seconds, 1),
         }
 
 

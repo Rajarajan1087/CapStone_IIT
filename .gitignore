@@ -12,3 +12,9 @@ evaluation/results/*.json
 # Word/Office lock and temp files
 ~$*
 *.tmp
+
+# transfer bundles (never part of the repo)
+*.tar.gz
+
+# generated: combined set for the full gate run
+data/all_tickets.json

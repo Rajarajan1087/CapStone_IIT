@@ -202,6 +202,202 @@ def test_stats_are_reported_for_the_metrics_report(tmp_path):
     stats = client.stats()
     assert set(stats) == {
         "calls_attempted", "calls_served_from_cache",
-        "calls_failed", "retries_performed",
+        "calls_failed", "retries_performed", "circuit_open", "provider",
+        "pacing_interval_seconds", "paced_wait_total_seconds",
     }
     assert stats["calls_attempted"] == 1
+
+
+# --- Circuit breaker -------------------------------------------------------
+
+
+def test_circuit_opens_after_repeated_failures(monkeypatch, tmp_path):
+    """
+    Found by measurement, not by reasoning: with the provider unreachable,
+    every ticket independently burned its full retry budget. Over a full
+    run that is hours of waiting to rediscover the same outage. After a few
+    consecutive failures the client stops calling out entirely.
+    """
+    def fake_post(*args, **kwargs):
+        raise ConnectionError("unreachable")
+
+    import src.model_client as mc
+    monkeypatch.setattr(mc.time, "sleep", lambda *_: None)
+    fake_requests = type("R", (), {"post": staticmethod(fake_post)})
+    monkeypatch.setitem(__import__("sys").modules, "requests", fake_requests)
+
+    client = ModelClient(api_key="k", cache_enabled=False, cache_path=tmp_path)
+    client.circuit_trip_threshold = 2
+
+    client.complete("one")
+    assert client.circuit_open is False
+    client.complete("two")
+    assert client.circuit_open is True, "breaker should trip after 2 failures"
+
+    # Once open, further calls return immediately without retrying.
+    before = client.retries_performed
+    result = client.complete("three")
+    assert result.ok is False
+    assert "degraded mode" in result.reason
+    assert client.retries_performed == before, "an open circuit must not retry"
+
+
+def test_success_resets_the_breaker(monkeypatch, tmp_path):
+    """A transient blip must not permanently degrade a run."""
+    calls = {"n": 0}
+
+    def fake_post(*args, **kwargs):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise ConnectionError("blip")
+        return _FakeResponse(200, _ok_payload("fine"))
+
+    import src.model_client as mc
+    monkeypatch.setattr(mc.time, "sleep", lambda *_: None)
+    fake_requests = type("R", (), {"post": staticmethod(fake_post)})
+    monkeypatch.setitem(__import__("sys").modules, "requests", fake_requests)
+
+    client = ModelClient(api_key="k", cache_enabled=False, cache_path=tmp_path)
+    client.complete("x")
+    assert client.consecutive_failures == 0
+    assert client.circuit_open is False
+
+
+# --- Provider switching ----------------------------------------------------
+
+
+def test_each_provider_gets_its_own_endpoint(tmp_path):
+    """
+    The pipeline must not be coupled to one provider. An exhausted free
+    tier or a provider outage should be a configuration change, not a
+    rewrite.
+    """
+    from src.model_client import MISTRAL_URL, OPENROUTER_URL
+
+    openrouter = ModelClient(api_key="k", provider="openrouter",
+                             cache_enabled=False, cache_path=tmp_path)
+    mistral = ModelClient(api_key="k", provider="mistral",
+                          cache_enabled=False, cache_path=tmp_path)
+    assert openrouter.endpoint == OPENROUTER_URL
+    assert mistral.endpoint == MISTRAL_URL
+
+
+def test_cache_is_partitioned_by_provider(tmp_path):
+    """
+    Two providers answering the same prompt are two different results.
+    A cache key that ignored the provider would serve one provider's
+    answer while the run believes it is using the other.
+    """
+    openrouter = ModelClient(api_key="k", provider="openrouter",
+                             cache_enabled=True, cache_path=tmp_path)
+    mistral = ModelClient(api_key="k", provider="mistral",
+                          cache_enabled=True, cache_path=tmp_path)
+    assert (openrouter._cache_key("same prompt", 0.0, 800)
+            != mistral._cache_key("same prompt", 0.0, 800))
+
+
+def test_mistral_placeholder_key_is_treated_as_absent(tmp_path):
+    """The shipped .env.example placeholder must not be mistaken for a key."""
+    client = ModelClient(api_key="your_mistral_key_here", provider="mistral",
+                         cache_enabled=False, cache_path=tmp_path)
+    assert client.available is False
+    assert client.complete("x").ok is False
+
+
+@pytest.mark.parametrize("provider", ["openrouter", "mistral"])
+def test_both_providers_share_the_same_resilience(monkeypatch, tmp_path, provider):
+    """
+    Retry, backoff and degradation behave identically whichever provider is
+    configured, because both speak the same chat-completions shape and sit
+    behind one contract.
+    """
+    calls = {"n": 0}
+
+    def fake_post(url, *args, **kwargs):
+        calls["n"] += 1
+        if calls["n"] < 2:
+            return _FakeResponse(429, headers={"Retry-After": "0"})
+        return _FakeResponse(200, _ok_payload(f"reply from {provider}"))
+
+    import src.model_client as mc
+    monkeypatch.setattr(mc.time, "sleep", lambda *_: None)
+    fake_requests = type("R", (), {"post": staticmethod(fake_post)})
+    monkeypatch.setitem(__import__("sys").modules, "requests", fake_requests)
+
+    client = ModelClient(api_key="k", provider=provider,
+                         cache_enabled=False, cache_path=tmp_path)
+    result = client.complete("x")
+
+    assert result.ok is True
+    assert result.text == f"reply from {provider}"
+    assert client.retries_performed == 1
+    assert client.stats()["provider"] == provider
+
+
+# --- Request pacing --------------------------------------------------------
+
+
+def test_pacing_enforces_a_gap_between_live_calls(monkeypatch, tmp_path):
+    """
+    Free tiers publish a sustained rate, not a burst allowance. Firing as
+    fast as the loop can go produces a 429 on the first call, which then
+    costs the whole retry budget to discover. Pacing avoids it instead.
+    """
+    slept = []
+
+    def fake_post(*args, **kwargs):
+        return _FakeResponse(200, _ok_payload("ok"))
+
+    import src.model_client as mc
+    monkeypatch.setattr(mc.time, "sleep", lambda s: slept.append(s))
+    fake_requests = type("R", (), {"post": staticmethod(fake_post)})
+    monkeypatch.setitem(__import__("sys").modules, "requests", fake_requests)
+
+    client = ModelClient(api_key="k", cache_enabled=False, cache_path=tmp_path)
+    client.min_interval_seconds = 1.1
+
+    client.complete("first")
+    client.complete("second")
+
+    # The second call must have waited; the first has no predecessor.
+    assert slept, "expected the second call to be paced"
+    assert max(slept) <= 1.1
+
+
+def test_pacing_widens_when_rate_limited(monkeypatch, tmp_path):
+    """
+    A 429 despite pacing means the real limit is stricter than configured.
+    The interval widens so the run slows down rather than failing -- the
+    correct trade for an unattended evaluation.
+    """
+    def fake_post(*args, **kwargs):
+        return _FakeResponse(429, headers={"Retry-After": "0"})
+
+    import src.model_client as mc
+    monkeypatch.setattr(mc.time, "sleep", lambda *_: None)
+    fake_requests = type("R", (), {"post": staticmethod(fake_post)})
+    monkeypatch.setitem(__import__("sys").modules, "requests", fake_requests)
+
+    client = ModelClient(api_key="k", cache_enabled=False, cache_path=tmp_path)
+    client.min_interval_seconds = 1.0
+    client.complete("x")
+
+    assert client.min_interval_seconds > 1.0, "pacing should widen after a 429"
+    assert client.min_interval_seconds <= 10.0, "widening must be bounded"
+
+
+def test_cache_hits_are_not_paced(tmp_path):
+    """
+    A cached answer never touches the provider, so it must not pay the
+    pacing cost. This is what makes a re-run effectively instant.
+    """
+    client = ModelClient(api_key="k", cache_enabled=True, cache_path=tmp_path)
+    client.min_interval_seconds = 5.0
+    key = client._cache_key("hello", 0.0, 800)
+    client._cache_write(key, "cached")
+
+    import time as _t
+    started = _t.monotonic()
+    result = client.complete("hello", temperature=0.0, max_tokens=800)
+    assert result.from_cache is True
+    assert _t.monotonic() - started < 1.0, "a cache hit must not sleep"

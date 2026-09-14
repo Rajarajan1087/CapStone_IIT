@@ -41,13 +41,15 @@ def section(title: str) -> None:
 def check_configuration() -> bool:
     section("1. Configuration")
     print(f"  project root          {PROJECT_ROOT}")
+    print(f"  provider              {settings.model_provider}")
     print(f"  model                 {settings.model_name}")
     print(f"  embedding model       {settings.embedding_model}")
     print(f"  chroma path           {settings.chroma_path}")
     print(f"  confidence threshold  {settings.confidence_threshold}")
     print(f"  retrieval top k       {settings.retrieval_top_k}")
     print(f"  response cache        {'on' if settings.cache_enabled else 'off'}")
-    print(f"  api key configured    {'yes' if settings.has_model_access else 'no'}")
+    print(f"  api key configured    {'yes' if settings.has_model_access else 'no'}"
+          f" (for {settings.model_provider})")
     print(f"{TICK} configuration loaded")
     return True
 
@@ -109,7 +111,8 @@ def check_model_access() -> bool:
         print(f"{WARN} no usable API key configured.")
         print("       The pipeline will run in degraded mode: every ticket that")
         print("       would need a model opinion is escalated to a human instead.")
-        print("       To enable it:  cp .env.example .env  and add your key.")
+        print(f"       To enable it: copy .env.example to .env, set")
+        print(f"       MODEL_PROVIDER and the matching key for it.")
         return False
 
     print(f"  calling {settings.model_name} ...")

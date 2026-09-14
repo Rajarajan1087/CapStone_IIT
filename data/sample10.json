@@ -1,0 +1,286 @@
+[
+  {
+    "ticket_id": "VAL-0001",
+    "channel": "forum",
+    "subject": "Need to rotate an exposed key",
+    "body": "One of our production keys started returning 401 at around yesterday morning without any change on our side. Other keys against the same account are still working.",
+    "received_at": "2026-03-02T08:32:00Z",
+    "customer_id": "CUST-1215",
+    "customer_name": "Dilnoza Karimova",
+    "customer_tier": "business",
+    "customer_region": "asia_pacific",
+    "language_fluency": "fluent",
+    "labels": {
+      "intent": "api_key_issue",
+      "urgency": "medium",
+      "expected_route": "auto_respond",
+      "answerable_from_docs": true,
+      "expected_doc_ids": [
+        "DOC-AUTH-004"
+      ],
+      "must_not_auto_respond": false
+    },
+    "history": {
+      "first_contact_resolution": true,
+      "resolution_time_minutes": 52,
+      "csat_rating": 4,
+      "escalated": false,
+      "repeat_contact": false
+    }
+  },
+  {
+    "ticket_id": "VAL-0002",
+    "channel": "chat",
+    "subject": "",
+    "body": "Following up on my previous message. Any update?",
+    "received_at": "2026-03-12T18:15:00Z",
+    "customer_id": "CUST-1252",
+    "customer_name": "Priya Brooks",
+    "customer_tier": "standard",
+    "customer_region": "north_america",
+    "language_fluency": "fluent",
+    "labels": {
+      "intent": "unclear_request",
+      "urgency": "high",
+      "expected_route": "escalate",
+      "answerable_from_docs": false,
+      "expected_doc_ids": [],
+      "must_not_auto_respond": true
+    },
+    "history": {
+      "first_contact_resolution": false,
+      "resolution_time_minutes": 543,
+      "csat_rating": 1,
+      "escalated": true,
+      "repeat_contact": false
+    }
+  },
+  {
+    "ticket_id": "VAL-0003",
+    "channel": "docs_comment",
+    "subject": "It is not working",
+    "body": "nothing is loading properly today. Can someone look into this? kindly check and revert.",
+    "received_at": "2026-04-17T12:48:00Z",
+    "customer_id": "CUST-1128",
+    "customer_name": "Caleb Karimova",
+    "customer_tier": "standard",
+    "customer_region": "europe",
+    "language_fluency": "non_fluent",
+    "labels": {
+      "intent": "unclear_request",
+      "urgency": "medium",
+      "expected_route": "escalate",
+      "answerable_from_docs": false,
+      "expected_doc_ids": [],
+      "must_not_auto_respond": true
+    },
+    "history": {
+      "first_contact_resolution": false,
+      "resolution_time_minutes": 1077,
+      "csat_rating": 2,
+      "escalated": true,
+      "repeat_contact": true
+    }
+  },
+  {
+    "ticket_id": "VAL-0004",
+    "channel": "email",
+    "subject": "MFA code keeps getting rejected",
+    "body": "my authenticator app codes are being rejected every time. i am having tried generating new ones several times.",
+    "received_at": "2026-04-20T06:36:00Z",
+    "customer_id": "CUST-1114",
+    "customer_name": "Quentin Kamau",
+    "customer_tier": "business",
+    "customer_region": "north_america",
+    "language_fluency": "non_fluent",
+    "labels": {
+      "intent": "authentication_failure",
+      "urgency": "medium",
+      "expected_route": "escalate",
+      "answerable_from_docs": false,
+      "expected_doc_ids": [],
+      "must_not_auto_respond": false
+    },
+    "history": {
+      "first_contact_resolution": false,
+      "resolution_time_minutes": 1133,
+      "csat_rating": 1,
+      "escalated": true,
+      "repeat_contact": false
+    }
+  },
+  {
+    "ticket_id": "VAL-0005",
+    "channel": "chat",
+    "subject": "",
+    "body": "Our cursor seems to stop working partway through a long iteration. Is there an expiry we should be handling?",
+    "received_at": "2026-04-24T12:07:00Z",
+    "customer_id": "CUST-1192",
+    "customer_name": "Chen Ferreira",
+    "customer_tier": "standard",
+    "customer_region": "asia_pacific",
+    "language_fluency": "fluent",
+    "labels": {
+      "intent": "api_usage_question",
+      "urgency": "low",
+      "expected_route": "auto_respond",
+      "answerable_from_docs": true,
+      "expected_doc_ids": [
+        "DOC-API-002"
+      ],
+      "must_not_auto_respond": false
+    },
+    "history": {
+      "first_contact_resolution": true,
+      "resolution_time_minutes": 24,
+      "csat_rating": 4,
+      "escalated": false,
+      "repeat_contact": false
+    }
+  },
+  {
+    "ticket_id": "VAL-0006",
+    "channel": "email",
+    "subject": "MFA code keeps getting rejected",
+    "body": "I have been trying to sign in for the last two hours and keep getting an invalid credentials message. I am certain the password is correct because I use a password manager. Nothing has changed at our end that I am aware of.",
+    "received_at": "2026-04-01T13:12:00Z",
+    "customer_id": "CUST-1215",
+    "customer_name": "Sanjay Brooks",
+    "customer_tier": "standard",
+    "customer_region": "asia_pacific",
+    "language_fluency": "fluent",
+    "labels": {
+      "intent": "authentication_failure",
+      "urgency": "medium",
+      "expected_route": "auto_respond",
+      "answerable_from_docs": true,
+      "expected_doc_ids": [
+        "DOC-AUTH-001",
+        "DOC-AUTH-002"
+      ],
+      "must_not_auto_respond": false
+    },
+    "history": {
+      "first_contact_resolution": true,
+      "resolution_time_minutes": 37,
+      "csat_rating": 4,
+      "escalated": false,
+      "repeat_contact": false
+    }
+  },
+  {
+    "ticket_id": "VAL-0007",
+    "channel": "chat",
+    "subject": "",
+    "body": "We have a problem and need someone to call us urgently.",
+    "received_at": "2026-04-17T23:56:00Z",
+    "customer_id": "CUST-1191",
+    "customer_name": "Tomas Dubois",
+    "customer_tier": "business",
+    "customer_region": "latin_america",
+    "language_fluency": "fluent",
+    "labels": {
+      "intent": "unclear_request",
+      "urgency": "high",
+      "expected_route": "escalate",
+      "answerable_from_docs": false,
+      "expected_doc_ids": [],
+      "must_not_auto_respond": true
+    },
+    "history": {
+      "first_contact_resolution": false,
+      "resolution_time_minutes": 972,
+      "csat_rating": 3,
+      "escalated": true,
+      "repeat_contact": false
+    }
+  },
+  {
+    "ticket_id": "VAL-0008",
+    "channel": "chat",
+    "subject": "",
+    "body": "We are tightening permissions after a review and I want to understand how group membership interacts with directly assigned roles.",
+    "received_at": "2026-03-17T16:29:00Z",
+    "customer_id": "CUST-1126",
+    "customer_name": "Chen Brooks",
+    "customer_tier": "standard",
+    "customer_region": "asia_pacific",
+    "language_fluency": "fluent",
+    "labels": {
+      "intent": "account_access",
+      "urgency": "high",
+      "expected_route": "auto_respond",
+      "answerable_from_docs": true,
+      "expected_doc_ids": [
+        "DOC-ACCT-001"
+      ],
+      "must_not_auto_respond": false
+    },
+    "history": {
+      "first_contact_resolution": true,
+      "resolution_time_minutes": 37,
+      "csat_rating": 1,
+      "escalated": false,
+      "repeat_contact": false
+    }
+  },
+  {
+    "ticket_id": "VAL-0009",
+    "channel": "docs_comment",
+    "subject": "Retention period question",
+    "body": "We need to demonstrate that read access to customer records is logged. I cannot find these events in the audit log.",
+    "received_at": "2026-05-10T23:59:00Z",
+    "customer_id": "CUST-1079",
+    "customer_name": "Hiroshi Rahman",
+    "customer_tier": "standard",
+    "customer_region": "europe",
+    "language_fluency": "fluent",
+    "labels": {
+      "intent": "compliance_request",
+      "urgency": "low",
+      "expected_route": "escalate",
+      "answerable_from_docs": true,
+      "expected_doc_ids": [
+        "DOC-SEC-003"
+      ],
+      "must_not_auto_respond": true
+    },
+    "history": {
+      "first_contact_resolution": false,
+      "resolution_time_minutes": 458,
+      "csat_rating": 5,
+      "escalated": true,
+      "repeat_contact": false
+    }
+  },
+  {
+    "ticket_id": "VAL-0010",
+    "channel": "docs_comment",
+    "subject": "Invoice higher than expected",
+    "body": "Our invoice this month is considerably higher than usual and I cannot see why from the summary. Could you help me understand what has driven the increase?",
+    "received_at": "2026-05-12T17:01:00Z",
+    "customer_id": "CUST-1209",
+    "customer_name": "Farid Brooks",
+    "customer_tier": "business",
+    "customer_region": "europe",
+    "language_fluency": "fluent",
+    "labels": {
+      "intent": "billing_query",
+      "urgency": "high",
+      "expected_route": "auto_respond",
+      "answerable_from_docs": true,
+      "expected_doc_ids": [
+        "DOC-BILL-001",
+        "DOC-BILL-002"
+      ],
+      "must_not_auto_respond": false
+    },
+    "history": {
+      "first_contact_resolution": false,
+      "resolution_time_minutes": 1042,
+      "csat_rating": 4,
+      "escalated": true,
+      "repeat_contact": false
+    }
+  }
+]

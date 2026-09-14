@@ -1,0 +1,284 @@
+{
+  "run": {
+    "started_at": "2026-09-12T09:57:03.321537+00:00",
+    "elapsed_seconds": 56.11,
+    "tickets_per_second": 10.3363,
+    "model": "meta-llama/llama-3.1-8b-instruct",
+    "model_available": false,
+    "confidence_threshold": 0.45,
+    "retrieval_score_threshold": 0.35,
+    "labels_present": true
+  },
+  "volume": {
+    "tickets_processed": 580,
+    "answered_automatically": 369,
+    "escalated": 211,
+    "blocked_by_guardrails": 6,
+    "processing_errors": 0,
+    "by_channel": {
+      "chat": 177,
+      "docs_comment": 94,
+      "email": 243,
+      "forum": 66
+    },
+    "by_routing_gate": {
+      "passed_all_gates": 369,
+      "below_confidence_threshold": 62,
+      "never_automate_intent": 130,
+      "safety_keyword": 9,
+      "guardrail_blocked": 6,
+      "no_retrieval": 4
+    }
+  },
+  "business": {
+    "escalation_rate": 0.3638,
+    "auto_respond_rate": 0.6362,
+    "routing_accuracy": 0.6966,
+    "first_contact_resolution": 0.4759,
+    "baseline_first_contact_resolution": 0.441,
+    "baseline_escalation_rate": 0.559
+  },
+  "technical": {
+    "retrieval_hit_rate": 0.9517,
+    "latency_p50_seconds": 0.1026,
+    "latency_p95_seconds": 0.1375,
+    "latency_mean_seconds": 0.0963,
+    "classification_accuracy": 0.8069,
+    "classification_by_class": {
+      "account_access": {
+        "precision": 0.7429,
+        "recall": 1.0,
+        "f1": 0.8525,
+        "support": 26
+      },
+      "api_key_issue": {
+        "precision": 0.75,
+        "recall": 0.75,
+        "f1": 0.75,
+        "support": 24
+      },
+      "api_usage_question": {
+        "precision": 0.6333,
+        "recall": 0.6786,
+        "f1": 0.6552,
+        "support": 28
+      },
+      "authentication_failure": {
+        "precision": 1.0,
+        "recall": 0.5217,
+        "f1": 0.6857,
+        "support": 23
+      },
+      "billing_query": {
+        "precision": 0.8718,
+        "recall": 1.0,
+        "f1": 0.9315,
+        "support": 34
+      },
+      "compliance_request": {
+        "precision": 0.6471,
+        "recall": 0.8148,
+        "f1": 0.7213,
+        "support": 27
+      },
+      "configuration_help": {
+        "precision": 0.6667,
+        "recall": 0.8,
+        "f1": 0.7273,
+        "support": 20
+      },
+      "data_export": {
+        "precision": 0.8333,
+        "recall": 1.0,
+        "f1": 0.9091,
+        "support": 30
+      },
+      "data_residency": {
+        "precision": 1.0,
+        "recall": 0.7429,
+        "f1": 0.8525,
+        "support": 35
+      },
+      "database_issue": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 27
+      },
+      "deployment_failure": {
+        "precision": 0.8205,
+        "recall": 1.0,
+        "f1": 0.9014,
+        "support": 32
+      },
+      "feature_request": {
+        "precision": 0.697,
+        "recall": 1.0,
+        "f1": 0.8214,
+        "support": 23
+      },
+      "integration_help": {
+        "precision": 1.0,
+        "recall": 0.875,
+        "f1": 0.9333,
+        "support": 24
+      },
+      "onboarding": {
+        "precision": 0.9167,
+        "recall": 0.4231,
+        "f1": 0.5789,
+        "support": 26
+      },
+      "performance_degradation": {
+        "precision": 1.0,
+        "recall": 0.6154,
+        "f1": 0.7619,
+        "support": 26
+      },
+      "quota_or_overage": {
+        "precision": 1.0,
+        "recall": 0.68,
+        "f1": 0.8095,
+        "support": 25
+      },
+      "rate_limit": {
+        "precision": 0.3043,
+        "recall": 0.5,
+        "f1": 0.3784,
+        "support": 14
+      },
+      "rollback_request": {
+        "precision": 1.0,
+        "recall": 0.9706,
+        "f1": 0.9851,
+        "support": 34
+      },
+      "security_incident": {
+        "precision": 1.0,
+        "recall": 0.7,
+        "f1": 0.8235,
+        "support": 30
+      },
+      "sso_configuration": {
+        "precision": 1.0,
+        "recall": 0.7778,
+        "f1": 0.875,
+        "support": 27
+      },
+      "unclear_request": {
+        "precision": 0.5,
+        "recall": 1.0,
+        "f1": 0.6667,
+        "support": 21
+      },
+      "webhook_issue": {
+        "precision": 1.0,
+        "recall": 0.625,
+        "f1": 0.7692,
+        "support": 24
+      }
+    },
+    "citation_accuracy": 0.9268
+  },
+  "governance": {
+    "decisions_logged": 2490,
+    "tickets_processed": 580,
+    "decisions_reconcile": true,
+    "guardrail_activations_by_type": {
+      "forbidden_commitment": 6
+    },
+    "guardrail_blocks_total": 6,
+    "private_data_detections": 0,
+    "tickets_processed_degraded": 580,
+    "processing_errors": 0,
+    "must_not_auto_respond_violations": 0,
+    "must_not_auto_respond_total": 101
+  },
+  "fairness": {
+    "by_customer_tier": {
+      "business": {
+        "tickets": 194,
+        "auto_respond_rate": 0.6495,
+        "escalation_rate": 0.3505,
+        "guardrail_block_rate": 0.0206,
+        "citation_rate": 0.9536,
+        "mean_confidence": 0.6646
+      },
+      "enterprise": {
+        "tickets": 91,
+        "auto_respond_rate": 0.6923,
+        "escalation_rate": 0.3077,
+        "guardrail_block_rate": 0.0,
+        "citation_rate": 0.978,
+        "mean_confidence": 0.6564
+      },
+      "standard": {
+        "tickets": 295,
+        "auto_respond_rate": 0.6102,
+        "escalation_rate": 0.3898,
+        "guardrail_block_rate": 0.0068,
+        "citation_rate": 0.9424,
+        "mean_confidence": 0.6629
+      }
+    },
+    "by_customer_region": {
+      "asia_pacific": {
+        "tickets": 140,
+        "auto_respond_rate": 0.6214,
+        "escalation_rate": 0.3786,
+        "guardrail_block_rate": 0.0143,
+        "citation_rate": 0.9429,
+        "mean_confidence": 0.6524
+      },
+      "europe": {
+        "tickets": 176,
+        "auto_respond_rate": 0.7045,
+        "escalation_rate": 0.2955,
+        "guardrail_block_rate": 0.017,
+        "citation_rate": 0.9489,
+        "mean_confidence": 0.6954
+      },
+      "latin_america": {
+        "tickets": 67,
+        "auto_respond_rate": 0.597,
+        "escalation_rate": 0.403,
+        "guardrail_block_rate": 0.0,
+        "citation_rate": 0.9552,
+        "mean_confidence": 0.6393
+      },
+      "north_america": {
+        "tickets": 197,
+        "auto_respond_rate": 0.599,
+        "escalation_rate": 0.401,
+        "guardrail_block_rate": 0.0051,
+        "citation_rate": 0.9594,
+        "mean_confidence": 0.648
+      }
+    },
+    "by_language_fluency": {
+      "fluent": {
+        "tickets": 441,
+        "auto_respond_rate": 0.6395,
+        "escalation_rate": 0.3605,
+        "guardrail_block_rate": 0.0068,
+        "citation_rate": 0.9501,
+        "mean_confidence": 0.6672
+      },
+      "non_fluent": {
+        "tickets": 139,
+        "auto_respond_rate": 0.6259,
+        "escalation_rate": 0.3741,
+        "guardrail_block_rate": 0.0216,
+        "citation_rate": 0.9568,
+        "mean_confidence": 0.6473
+      }
+    }
+  },
+  "model_client": {
+    "calls_attempted": 0,
+    "calls_served_from_cache": 0,
+    "calls_failed": 0,
+    "retries_performed": 0,
+    "circuit_open": false
+  }
+}
