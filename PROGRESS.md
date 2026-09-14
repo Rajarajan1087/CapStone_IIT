@@ -3,119 +3,159 @@
 **Project:** CloudServe Solutions support system — IIT Roorkee FDE capstone
 **Repo:** https://github.com/Rajarajan1087/CapStone_IIT
 **Local:** `C:\Users\Rajarajan\Documents\FDE_Capstone_Complete\CapStone_IIT`
-**Pack:** `..\Capstone_Pack\` (siblings folder — templates, datasets, reference docs)
 
 | Key date | |
 |---|---|
-| Review milestone (coordinator) | **15 Sept 2026** |
+| Coordinator review | **15 Sept 2026** |
 | Submission deadline | **20 Sept 2026, 23:59** |
-| Last updated | 8 Sept 2026 |
+| Phase A status | **COMPLETE — the gate has cleared** |
 
 ---
 
-## Where things stand
+## Stage status
 
-| Stage | Status | Artefact |
-|---|---|---|
-| 1 — Discovery | ✅ Done | `docs/workbooks/Stage_1_Discovery_Workbook_Completed.docx` |
-| 2 — Requirements (PRD v1) | ✅ Done | `docs/workbooks/Stage_2_PRD_v1.docx` |
-| 3 — Prompt library | ✅ Done | `docs/workbooks/Stage_3_Prompt_Library_Completed.docx` + `prompts/` |
-| 4 — Sprint plan | ✅ Done | `docs/workbooks/Stage_4_Sprint_Plan_Completed.docx` |
-| **Build (B-01 → B-11)** | ⬜ **NOT STARTED — resume here** | `src/` stubs are empty |
-| 5 — PRD revision + log | ⬜ Blocked on gate | Phase B |
-| Governance framework | ⬜ Not started | Phase B |
-| Report / video / package | ⬜ Not started | Phase B |
-
-**Repo scaffold is done and verified:** folder structure, `evaluation/harness.py` (CLI contract proven against an arbitrary input path), `src/logging_store.py` (SQLite decision log, schema verified), `tests/test_harness_smoke.py`, datasets in `data/`.
-
----
-
-## The finding everything rests on
-
-Do not relitigate this — it is evidenced in Discovery §1 and §2:
-
-| Figure | Value | Why it matters |
-|---|---|---|
-| Tickets answerable from existing docs | **70.7%** (410/580) | They do not lack answers |
-| Historical escalations that were doc-answerable | **47.5%** (154/324) | Escalation is a *findability/confidence* failure, not a difficulty one |
-| FCR baseline | 44.1% | Matches Marcus's own 42% estimate |
-| Escalation rate baseline | 55.9% | |
-| CSAT: escalated vs not | 2.56 vs 3.38 | Escalation itself drives dissatisfaction |
-| Repeat contact: escalated vs not | 38.6% vs 0% | |
-| `must_not_auto_respond` share | 17.4% (101/580) | 4 intents, 100% historically escalated |
-
-**Problem statement (one line):** CloudServe doesn't lack answers — it lacks a way to surface the right answer at first contact with enough confidence to act on. So this is **not built as a chatbot**.
-
----
-
-## Decisions already made (don't re-decide)
-
-| Decision | Rationale |
+| Stage | Status |
 |---|---|
-| Not a conversational chatbot | Discovery evidence; recorded as out-of-scope in PRD §6 |
-| Retrieve **only** from the 29 reviewed KB articles | Never from agent history / personal snippet files — Daniel's staleness risk |
-| Guardrail is **two layers**: deterministic rules first, then model (PR-05) | A block must not depend on the provider being up (A11); also cheaper |
-| Never-automate list is **code, not a prompt** (FR-08) | So no injection can override it |
-| 4 never-automate intents | `security_incident`, `compliance_request`, `feature_request`, `unclear_request` |
-| Prompts versioned in filenames, superseded files retained | So any decision-log row traces to exact prompt text |
-| Harness takes `--input`/`--output` | Hidden 120-ticket set is never distributed (A9) |
-
-**Known weakness documented, not hidden:** PR-03 (drafter) and PR-05 (judge) share a model family → correlated failure risk. Mitigated by the deterministic first layer + "block when uncertain".
-
----
-
-## Resume here — Phase A build plan
-
-Capacity ~31h across 8 days. Estimates assume Stage 3 prompts are already written (they are — that's why classifier/generator/guardrail are 3h not 4h).
-
-| Day | Hrs | Target | Items |
-|---|---|---|---|
-| Tue 8 | 2.5 | Env + live model call | B-01, start B-02 |
-| Wed 9 | 2.5 | 4-channel ingest ✓ *Day 1 checkpoint* | B-02 |
-| Thu 10 | 2.5 | Corpus chunked + embedded | B-03 |
-| Fri 11 | 2.5 | Retrieval traceable ✓ *Day 2 checkpoint* | B-04, start B-06 |
-| **Sat 12** | **8** | Classify + route + log ✓ *Day 3* | B-06, B-07, B-10, start B-08 |
-| **Sun 13** | **8** | Generate + guardrails + metrics ✓ *Day 4* | B-08, B-09, B-05 |
-| **Mon 14** | 2.5 | 🔶 **GATE CLEARS** | B-11 |
-| Tue 15 | 2.5 | Tests, clean checkout, fairness → review-ready | B-18, B-19, B-14 |
-
-**Hard rule:** if Sat 12 ends without routing + logging working, cut intent-class coverage — never move the gate.
-
-**Cut order if short:** 1) Grafana dashboards 2) 22 classes → top classes + fallback 3) CI pipeline 4) fairness narrative 5) second video take.
-**Never cut:** B-11 gate, B-10 decision log, B-09 guardrail, B-18 tests, B-16 PRD revision, B-19 clean checkout.
+| 1 — Discovery | Done |
+| 2 — Requirements (PRD v1) | Done |
+| 3 — Prompt library | Done |
+| 4 — Sprint plan | Done |
+| **Phase A build (B-01 → B-19)** | **Done — gate cleared** |
+| 5 — PRD revision + log | **Done — Wed 16 Sept** |
+| Governance framework + kill switch | **Done — Wed 16 Sept** (pulled forward from Thu 17) |
+| Report (30pp PDF) | **Done — Thu 17 to Fri 18 Sept** |
+| Effort log + PRD v2.0 document | **Done — Fri 18 Sept** |
+| Video | Sat 19 Sept |
+| Package + submit | Sun 20 Sept |
 
 ---
 
-## Blockers / open items
+## Phase B log
 
-| Item | Status | Note |
+### Wed 16 Sept — Stage 5 revision and governance
+- PRD v2.0 issued: **4 requirements changed** (FR-03, FR-04, FR-07, NFR-02),
+  **2 added** (FR-13 independent safety net, FR-14 kill switch), 0 removed.
+- `Stage_5_PRD_Revision_Log_Completed.docx` — every entry names a measurement,
+  not an opinion.
+- `Governance_Framework_Completed.docx` — 9-risk register with a named control
+  and file for each, fairness audit, 6-step incident procedure, declaration.
+- **New code:** `src/kill_switch.py` + `tests/test_kill_switch.py` (8 tests).
+  Writing the governance doc found the gap; the control was built before the
+  document claimed it existed. Test count 62 → **78**.
+
+### Thu 17 – Fri 18 Sept — The report
+- `RajarajanVenkatesan_Capstone_Report.pdf` — **30 pages**, prescribed section
+  order, 5 numbered figures, 5 appendices.
+- AI-use declaration placed on **page 2**, before the contents.
+- All three fairness gaps reported in full, with an action for each.
+- Found while writing Appendix B: `rate_limit` classifies at **F1 0.38**, the
+  weakest class, confusing both ways with `quota_or_overage`. Not a safety
+  issue; recorded as the clearest available improvement.
+
+### Fri 18 Sept — Effort log and PRD v2.0
+- `RajarajanVenkatesan_Effort_Log.pdf` — 6 pages, assembled from the daily
+  records in this file and LEARNING_LOG.md, not from memory.
+  **79.5 hrs against 60.5 planned (+19.0).** Week and stage totals reconcile.
+  - Routing: 2.5 est → **6.5 actual**. The estimate was "derive a threshold";
+    the reality was discovering no threshold can carry the decision.
+  - The gate: 4.0 est → **1.0 actual**. No debugging needed, because the
+    harness and offline path were already right.
+  - Provider access: **4.0 hrs, nothing assessable.** Recorded, not hidden.
+- `Stage_2_PRD_v2.pdf` — 6 pages. Amber rows revised, green rows new, so a
+  reviewer sees what moved without opening v1.0.
+  - 4 assumptions tested: 2 held, 2 failed. The enterprise one failed usefully
+    — the tier-specific threshold was deleted and moved to out-of-scope.
+  - 5 open questions from v1.0: 4 resolved, 1 deferred. 3 new ones added.
+  - The threshold-per-class question **dissolved** rather than being answered:
+    gate one excludes classes before confidence is read.
+- `docs/VIDEO_DEMO_TICKETS.md` — verified ticket IDs for Saturday's recording.
+
+### Demo tickets for the video (verified against the gate run)
+
+| Show | Ticket | Why this one |
 |---|---|---|
-| OpenRouter API key | ⬜ Needed for B-01 | Free tier. Goes in `.env` (already gitignored). Build can start offline-first without it — ingest, chunking, retrieval and all deterministic layers need no model call. |
-| GitHub push token | ⬜ Revoked | Fine-grained PAT needs **Contents: Read and write**. Commits are landing locally either way. |
-
-## Open questions carried from PRD §9
-
-1. Is CSAT measurable at all here, or does it need a proxy? → decide before the gate run
-2. Confidence threshold value — one global, or per intent class? → decide during B-07
-3. Does chunking strategy materially change retrieval hit rate? → test during B-03
-4. Does the enterprise escalation finding (60.4%, highest of all tiers) change routing, or only fairness reporting? → decide before Stage 5 revision
-5. Escalation summary delivery — logged only, or does it need a UI? → decide at B-08
+| Success | `DEV-0017` | conf 0.88, two citations |
+| Escalation, gate 1 | `DEV-0003` | compliance_request — refused before any score is read |
+| Escalation, gate 2 | `DEV-0132` | classifier said routine API question; keyword net caught "former employee" |
+| Guardrail block | `DEV-0073` | forbidden_commitment — 1 of only 6 blocks in 580 |
 
 ---
 
-## The 12 acceptance criteria — tracker
+## The 12 acceptance criteria
 
 | # | Criterion | Status |
 |---|---|---|
-| A1 | Runs from clean checkout via README | ⬜ B-19 |
-| A2 | Four channels ingested + normalised | ⬜ B-02 |
-| A3 | Classified w/ numeric confidence | ⬜ B-06 |
-| A4 | Retrieval returns identifiable passages | ⬜ B-04 |
-| A5 | Routing deterministic on threshold | ⬜ B-07 |
-| A6 | Citations resolve to retrieved passages | ⬜ B-08 |
-| A7 | Guardrail blocks when triggered | ⬜ B-09 |
-| A8 | Every decision logged, reconciles | ⬜ B-10 |
-| A9 | Full set processed unattended | ⬜ **B-11 — THE GATE** |
-| A10 | Metrics report auto-produced | 🟡 harness emits structure, needs real figures (B-05) |
-| A11 | Handles failure w/o crashing | 🟡 harness catches per-ticket errors; provider-outage path pending |
-| A12 | Tests pass via one command | 🟡 smoke test passes; suite pending (B-18) |
+| A1 | Runs from clean checkout via README | **Pass** — verified in an empty directory |
+| A2 | Four channels ingested and normalised | **Pass** — 580/580, zero warnings |
+| A3 | Classified with numeric confidence | **Pass** — 80.7% accuracy |
+| A4 | Retrieval returns identifiable passages | **Pass** — all doc_ids resolve |
+| A5 | Routing deterministic | **Pass** — verified by repeat runs |
+| A6 | Citations resolve to retrieved passages | **Pass** — 92.7% citation accuracy |
+| A7 | Guardrail blocks when triggered | **Pass** — and needs no model call |
+| A8 | Every decision logged, reconciles | **Pass** — 2,490 records |
+| A9 | Full set processed unattended | **Pass — THE GATE** |
+| A10 | Metrics report auto-produced | **Pass** |
+| A11 | Handles failure without crashing | **Pass** — incl. total provider outage |
+| A12 | Tests pass via one command | **Pass** — 62 tests |
+
+---
+
+## Gate run results (580 tickets)
+
+| Measure | Result | Baseline |
+|---|---|---|
+| Tickets processed | 580 | — |
+| Processing errors | 0 | — |
+| Classification accuracy | 80.7% | — |
+| Routing accuracy | 69.7% | — |
+| Citation accuracy | 92.7% | — |
+| First contact resolution | 47.6% | 44.1% |
+| Escalation rate | 36.4% | 55.9% |
+| Never-automate violations | **0 of 101** | — |
+| Runtime | 2.7 s | — |
+
+Run without model access, on the deterministic path only.
+
+---
+
+## Fairness findings (need explanation in the report)
+
+| Finding | Gap |
+|---|---|
+| Europe vs Latin America auto-answer rate | 10.8 pts (70.5% vs 59.7%) |
+| Enterprise vs standard auto-answer rate | 8.2 pts (69.2% vs 61.0%) |
+| Non-fluent guardrail block rate | 3x (2.2% vs 0.7%) |
+
+---
+
+## Decisions settled — do not relitigate
+
+| Decision | Why |
+|---|---|
+| Not a chatbot | 70.7% of tickets already answerable from docs |
+| No external vector DB | 145 passages; pure-Python TF-IDF is faster to run and to reason about |
+| Section-aware chunking | 87.7% vs 85.4% hit@1, and never splits a repair sequence |
+| Answerability decided by intent, not score | Retrieval precision caps at ~78% regardless of threshold |
+| Confidence threshold 0.45 | Zero safety leaks; keeps margin for the model path |
+| Never-automate list in code, not prompt | So no injection can widen it |
+| Guardrail deterministic-first | A block must not need the provider online |
+| Circuit breaker after 3 failures | Without it an outage makes the run take hours |
+
+---
+
+## Known limitations (state these, do not hide them)
+
+- Search matches words, not meanings; synonym expansion bridges common cases.
+- Routing accuracy 69.7% — most shortfall is over-escalation, the safe direction.
+- The live-model path is built and tested but has never run against a real key.
+  Every number above is from the deterministic path.
+- Three fairness gaps need investigation, not a patch.
+
+---
+
+## For Phase B
+
+Bring `evaluation/results/gate/metrics_report.json` — it contains every figure
+the report needs, including the fairness segmentation.
+
+Read `LEARNING_LOG.md` for the narrative of what was built and why.
